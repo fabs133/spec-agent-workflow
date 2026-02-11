@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Environment
+.env
+
+# Database
+data/spec_agent.db
+
+# Output (generated at runtime)
+data/output/*
+!data/output/.gitkeep
+
+# Sphinx build artifacts
+docs/build/
+
+# IDE
+.vscode/
+.idea/
+
+# Pytest
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

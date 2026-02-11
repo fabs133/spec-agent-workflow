@@ -1,0 +1,16 @@
+Architecture Review Notes
+
+Pattern: Repository Pattern
+We should use the repository pattern for data access to decouple
+business logic from database operations. This makes testing easier
+since we can mock the repository in unit tests.
+
+Task: Set up CI/CD pipeline
+- Configure GitHub Actions for automated testing
+- Add linting step (ruff)
+- Deploy to staging on merge to main
+- Estimated effort: 2 days
+
+Note: The API rate limiting should be implemented at the gateway level,
+not in individual services. This avoids duplication and ensures consistent
+behavior across all endpoints.

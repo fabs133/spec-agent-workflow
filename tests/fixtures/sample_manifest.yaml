@@ -1,0 +1,40 @@
+name: test_workflow
+description: "Test manifest for unit tests"
+version: "1.0"
+
+defaults:
+  model: gpt-4o-mini
+  temperature: 0.1
+
+steps:
+  step_a:
+    agent: mock_agent_a
+    specs:
+      pre: [intake_pre]
+      post: [intake_post]
+      invariant: [global_invariant]
+    retry:
+      max_attempts: 2
+
+  step_b:
+    agent: mock_agent_b
+    specs:
+      pre: [extract_pre]
+      post: [extract_post]
+    retry:
+      max_attempts: 3
+      delay_seconds: 0.5
+
+edges:
+  - from: step_a
+    to: step_b
+    condition: on_pass
+  - from: step_a
+    to: __end__
+    condition: on_fail
+
+entry_step: step_a
+
+budgets:
+  max_retries_per_step: 3
+  max_total_steps: 10

@@ -1,0 +1,21 @@
+Meeting Notes - Sprint Planning
+
+We need to implement the following features:
+
+1. User authentication with OAuth2
+   - Support Google and GitHub login
+   - Store tokens securely
+   - Priority: HIGH
+
+2. Dashboard redesign
+   - Move sidebar to the left
+   - Add dark mode toggle
+   - Priority: MEDIUM
+
+3. Bug: CSV export crashes when data contains special characters
+   - Reported by: Customer Support
+   - Priority: HIGH
+   - Workaround: Remove special chars before export
+
+Decision: We will use PostgreSQL instead of MySQL for the new microservice
+because it has better JSON support and the team has more experience with it.
