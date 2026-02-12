@@ -1,4 +1,4 @@
-"""Manifest loader: reads YAML workflow definitions into in-memory objects.
+"""Manifest loader: reads JSON workflow definitions into in-memory objects.
 
 The manifest is the source of truth:
 - Defines agents, steps, specs, edges, budgets
@@ -8,11 +8,10 @@ The manifest is the source of truth:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
-
-import yaml
 
 from core.errors import ManifestError
 from core.router import Edge
@@ -32,21 +31,26 @@ class Manifest:
     budgets: Dict[str, int] = field(default_factory=dict)
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> Manifest:
-        """Load a manifest from a YAML file."""
+    def from_file(cls, path: str | Path) -> Manifest:
+        """Load a manifest from a JSON file."""
         path = Path(path)
         if not path.exists():
             raise ManifestError(f"Manifest file not found: {path}")
 
         try:
-            raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-        except yaml.YAMLError as e:
-            raise ManifestError(f"Invalid YAML in {path}: {e}")
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            raise ManifestError(f"Invalid JSON in {path}: {e}")
 
         if not isinstance(raw, dict):
-            raise ManifestError(f"Manifest must be a YAML mapping, got {type(raw)}")
+            raise ManifestError(f"Manifest must be a JSON object, got {type(raw)}")
 
         return cls._parse(raw)
+
+    @classmethod
+    def from_yaml(cls, path: str | Path) -> Manifest:
+        """Backward-compatible alias for from_file."""
+        return cls.from_file(path)
 
     @classmethod
     def from_dict(cls, raw: Dict[str, Any]) -> Manifest:

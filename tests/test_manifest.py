@@ -16,14 +16,14 @@ MANIFESTS = Path(__file__).parent.parent / "manifests"
 
 class TestManifestLoading:
     def test_load_sample_manifest(self):
-        m = Manifest.from_yaml(FIXTURES / "sample_manifest.yaml")
+        m = Manifest.from_file(FIXTURES / "sample_manifest.json")
         assert m.name == "test_workflow"
         assert m.entry_step == "step_a"
         assert len(m.steps) == 2
         assert len(m.edges) == 2
 
     def test_load_production_manifest(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert m.name == "text_extraction"
         assert m.entry_step == "intake"
         assert len(m.steps) == 3
@@ -32,35 +32,35 @@ class TestManifestLoading:
         assert "write" in m.steps
 
     def test_steps_have_correct_agents(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert m.steps["intake"].agent_name == "intake_agent"
         assert m.steps["extract"].agent_name == "extract_agent"
         assert m.steps["write"].agent_name == "write_agent"
 
     def test_steps_have_specs(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert "intake_pre" in m.steps["intake"].pre_specs
         assert "intake_post" in m.steps["intake"].post_specs
         assert "global_invariant" in m.steps["intake"].invariant_specs
 
     def test_steps_have_retry_policy(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert m.steps["extract"].retry.max_attempts == 3
         assert m.steps["extract"].retry.delay_seconds == 2.0
 
     def test_edges_parsed(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         edges = m.edges
         assert any(e.from_step == "intake" and e.to_step == "extract" for e in edges)
         assert any(e.from_step == "extract" and e.to_step == "write" for e in edges)
 
     def test_defaults_loaded(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert m.defaults["model"] == "gpt-4o"
         assert m.defaults["temperature"] == 0.3
 
     def test_budgets_loaded(self):
-        m = Manifest.from_yaml(MANIFESTS / "text_extraction.yaml")
+        m = Manifest.from_file(MANIFESTS / "text_extraction.json")
         assert m.budgets["max_retries_per_step"] == 3
         assert m.budgets["max_total_steps"] == 20
 
@@ -96,7 +96,7 @@ class TestManifestValidation:
 
     def test_nonexistent_file_raises(self):
         with pytest.raises(ManifestError, match="not found"):
-            Manifest.from_yaml("/nonexistent/path.yaml")
+            Manifest.from_file("/nonexistent/path.yaml")
 
 
 class TestManifestFromDict:

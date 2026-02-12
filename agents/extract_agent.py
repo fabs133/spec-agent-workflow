@@ -11,9 +11,8 @@ import json
 import time
 from typing import Any, Dict, List
 
-from openai import OpenAI
-
 from core.agents import BaseAgent, register_agent
+from core.llm_client import chat_completion
 from core.models import Context
 from agents.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
@@ -27,7 +26,6 @@ class ExtractAgent(BaseAgent):
         model = context.config.get("model", "gpt-4o")
         temperature = context.config.get("temperature", 0.3)
 
-        client = OpenAI(api_key=api_key)
         loaded_files = context.data.get("loaded_files", [])
         all_items: List[Dict[str, Any]] = []
 
@@ -38,7 +36,8 @@ class ExtractAgent(BaseAgent):
             )
 
             start_time = time.time()
-            response = client.chat.completions.create(
+            raw_content, tokens = chat_completion(
+                api_key=api_key,
                 model=model,
                 temperature=temperature,
                 messages=[
@@ -47,9 +46,8 @@ class ExtractAgent(BaseAgent):
                 ],
             )
             duration_ms = int((time.time() - start_time) * 1000)
-
-            raw_content = response.choices[0].message.content or "[]"
-            tokens = response.usage.total_tokens if response.usage else 0
+            if not raw_content:
+                raw_content = "[]"
 
             context.add_trace({
                 "type": "llm_call",

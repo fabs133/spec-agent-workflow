@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spec-Agent Workflow</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="brand">Spec-Agent</div>
+        <h2>Pages</h2>
+        <a href="#dashboard" data-page="dashboard">Dashboard</a>
+        <a href="#run" data-page="run">Run Workflow</a>
+        <a href="#history" data-page="history">Run History</a>
+        <a href="#items" data-page="items">Items Browser</a>
+        <a href="#settings" data-page="settings">Settings</a>
+        <hr style="margin: 0.5rem 1rem;">
+        <a href="#manifest" data-page="manifest">Manifest</a>
+        <a href="#arch" data-page="arch">Architecture</a>
+        <a href="#guide" data-page="guide">User Guide</a>
+        <div class="info" id="sidebar-info">
+            <p><strong>DB:</strong> <span class="mono">spec_agent.db</span></p>
+            <p><strong>API Key:</strong> <span id="sidebar-key-status">...</span></p>
+            <p><strong>Model:</strong> <span id="sidebar-model" class="mono">gpt-4o</span></p>
+            <hr>
+            <p>Spec-Agent v0.2.0</p>
+        </div>
+    </nav>
+    <main class="main" id="app">
+        <p>Loading...</p>
+    </main>
+    <script src="/app.js"></script>
+</body>
+</html>

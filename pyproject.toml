@@ -1,13 +1,9 @@
 [project]
 name = "spec-agent"
-version = "0.1.0"
-description = "Spec-Pattern Multi-Agent Workflow System"
+version = "0.2.0"
+description = "Spec-Pattern Multi-Agent Workflow System (standalone)"
 requires-python = ">=3.10"
-dependencies = [
-    "openai>=1.0.0",
-    "pyyaml>=6.0",
-    "streamlit>=1.30.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
