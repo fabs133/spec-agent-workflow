@@ -1,0 +1,31 @@
+{
+  "system_name": "Text- & Kanban-Workflow-System",
+  "actors": [
+    {"id": "projektplaner", "name": "Projektplaner"},
+    {"id": "teamleiter", "name": "Teamleiter"},
+    {"id": "admin", "name": "Administrator"}
+  ],
+  "usecases": [
+    {"id": "uc1", "name": "Textdateien einlesen"},
+    {"id": "uc2", "name": "Inhalte zusammenfassen"},
+    {"id": "uc3", "name": "Work Items f\u00fcr Kanban erzeugen"},
+    {"id": "uc4", "name": "Workflow & Modell konfigurieren"},
+    {"id": "uc5", "name": "Ergebnisse & Historie einsehen"},
+    {"id": "uc6", "name": "Anwendung installieren & konfigurieren"},
+    {"id": "uc7", "name": "Projektstatus f\u00fcr Pr\u00e4sentation vorbereiten"}
+  ],
+  "associations": [
+    {"actor": "projektplaner", "usecase": "uc1"},
+    {"actor": "projektplaner", "usecase": "uc2"},
+    {"actor": "projektplaner", "usecase": "uc3"},
+    {"actor": "projektplaner", "usecase": "uc5"},
+    {"actor": "projektplaner", "usecase": "uc7"},
+    {"actor": "teamleiter", "usecase": "uc2"},
+    {"actor": "teamleiter", "usecase": "uc3"},
+    {"actor": "teamleiter", "usecase": "uc5"},
+    {"actor": "teamleiter", "usecase": "uc7"},
+    {"actor": "admin", "usecase": "uc4"},
+    {"actor": "admin", "usecase": "uc5"},
+    {"actor": "admin", "usecase": "uc6"}
+  ]
+}

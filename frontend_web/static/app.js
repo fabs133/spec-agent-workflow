@@ -11,6 +11,7 @@ const routes = {
     'items': renderItemsBrowser,
     'settings': renderSettings,
     'manifest': renderManifest,
+    'diagrams': renderDiagrams,
     'arch': renderArchitecture,
     'guide': renderUserGuide,
     'detail': renderRunDetail,
@@ -1029,4 +1030,68 @@ spec-agent-workflow/
                 <tr><td>Port already in use</td><td>Run <code>python run.py --port 8502</code> to use a different port</td></tr>
             </table>
         </div>`;
+}
+
+// ============================================================
+// Diagrams Page
+// ============================================================
+
+function renderDiagrams() {
+    const diagramTypes = [
+        { type: 'component', title: 'Komponentendiagramm', desc: 'Shows project modules, packages, and import relationships extracted from Python AST.' },
+        { type: 'state', title: 'Zustandsdiagramm', desc: 'Visualizes the workflow pipeline states and transitions from the manifest.' },
+        { type: 'usecase', title: 'Use-Case-Diagramm', desc: 'Displays actors, use cases, and associations for the system.' },
+    ];
+
+    const cards = diagramTypes.map(d => `
+        <div class="card" id="diagram-card-${d.type}">
+            <h3>${d.title}</h3>
+            <p class="text-muted text-sm">${d.desc}</p>
+            <div style="margin-top: 0.5rem;">
+                <button class="btn" onclick="generateDiagram('${d.type}')">Generate</button>
+                <span id="diagram-status-${d.type}" style="margin-left: 0.5rem;"></span>
+            </div>
+            <div id="diagram-download-${d.type}" style="margin-top: 0.5rem;"></div>
+        </div>
+    `).join('');
+
+    app().innerHTML = `
+        <h1>Diagram Generator</h1>
+        <p class="text-muted">Generate Draw.io diagrams from project source code.</p>
+
+        <div style="margin-bottom: 1rem;">
+            <button class="btn" onclick="generateDiagram('all')">Generate All</button>
+            <span id="diagram-status-all" style="margin-left: 0.5rem;"></span>
+        </div>
+
+        ${cards}
+    `;
+}
+
+async function generateDiagram(type) {
+    const statusEl = document.getElementById('diagram-status-' + type);
+    if (statusEl) statusEl.innerHTML = '<span class="badge badge-running">Generating...</span>';
+
+    try {
+        const result = await api('/api/diagrams/generate', {
+            method: 'POST',
+            body: JSON.stringify({ type: type }),
+        });
+
+        if (result.error) {
+            if (statusEl) statusEl.innerHTML = '<span class="badge badge-fail">Error: ' + result.error + '</span>';
+            return;
+        }
+
+        if (statusEl) statusEl.innerHTML = '<span class="badge badge-pass">Done</span>';
+
+        for (const file of result.files) {
+            const dlEl = document.getElementById('diagram-download-' + file.type);
+            if (dlEl) {
+                dlEl.innerHTML = '<a href="/api/diagrams/download?file=' + encodeURIComponent(file.filename) + '" class="btn" download>' + file.filename + '</a>';
+            }
+        }
+    } catch (err) {
+        if (statusEl) statusEl.innerHTML = '<span class="badge badge-fail">Error: ' + err.message + '</span>';
+    }
 }

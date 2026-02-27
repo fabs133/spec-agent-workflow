@@ -86,6 +86,10 @@ class APIHandler(BaseHTTPRequestHandler):
         elif path == "/api/step-detail":
             step_id = qs.get("step_id", [None])[0]
             self._handle_step_detail(step_id)
+        elif path == "/api/diagrams/types":
+            self._handle_diagram_types()
+        elif path.startswith("/api/diagrams/download"):
+            self._handle_diagram_download(qs)
         else:
             self._serve_static(path)
 
@@ -98,6 +102,8 @@ class APIHandler(BaseHTTPRequestHandler):
             self._handle_save_settings(body)
         elif path == "/api/workflow/run":
             self._handle_start_workflow(body)
+        elif path == "/api/diagrams/generate":
+            self._handle_diagram_generate(body)
         else:
             self._json_response({"error": "Not found"}, 404)
 
@@ -493,6 +499,62 @@ class APIHandler(BaseHTTPRequestHandler):
             "context_before": before,
             "context_after": after,
         })
+
+
+    # ------------------------------------------------------------------
+    # Diagram Handlers
+    # ------------------------------------------------------------------
+
+    def _handle_diagram_types(self):
+        self._json_response(["component", "state", "usecase"])
+
+    def _handle_diagram_generate(self, body: Dict[str, Any]):
+        diagram_type = body.get("type", "")
+        if diagram_type not in ("component", "state", "usecase", "all"):
+            self._json_response({"error": "Invalid type"}, 400)
+            return
+
+        try:
+            from diagrams.cli import _generate_one
+
+            output_dir = PROJECT_ROOT / "data" / "output" / "diagrams"
+            types = ["component", "state", "usecase"] if diagram_type == "all" else [diagram_type]
+            files = []
+            for t in types:
+                _, path = _generate_one(t, PROJECT_ROOT, output_dir)
+                files.append({
+                    "type": t,
+                    "filename": f"{t}.drawio",
+                    "path": str(path),
+                })
+            self._json_response({"status": "ok", "files": files})
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _handle_diagram_download(self, qs: Dict):
+        filename = qs.get("file", [None])[0]
+        if not filename:
+            self._json_response({"error": "file parameter required"}, 400)
+            return
+
+        # Security: only allow simple filenames
+        if "/" in filename or "\\" in filename or ".." in filename:
+            self._json_response({"error": "Invalid filename"}, 400)
+            return
+
+        file_path = PROJECT_ROOT / "data" / "output" / "diagrams" / filename
+        if not file_path.exists() or not file_path.is_file():
+            self._json_response({"error": "File not found"}, 404)
+            return
+
+        content = file_path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/xml")
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(content)
 
 
 def start_server(port: int = 8501):
