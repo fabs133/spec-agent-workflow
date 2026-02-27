@@ -82,6 +82,12 @@ python run.py --port 8502
 3. Go to **Run Workflow** and click **Start Workflow**
 4. Inspect results on the **Dashboard**, **Run Detail**, or **Items Browser**
 
+### Generate Diagrams
+
+```bash
+python -m diagrams --type all --output data/output/diagrams/
+```
+
 ### Run Tests
 
 ```bash
@@ -119,9 +125,17 @@ agent-workflow/
 │       ├── index.html     # App shell with sidebar navigation
 │       ├── app.js         # All pages as JS render functions
 │       └── style.css      # Dark theme styles
+├── diagrams/              # Auto-generate Draw.io diagrams
+│   ├── models.py          # DiagramNode, DiagramEdge, Diagram
+│   ├── extractor.py       # Extract data from AST, manifest, config
+│   ├── builder.py         # Build diagram objects
+│   ├── validator.py       # Validate diagram consistency
+│   ├── renderer.py        # Render to Draw.io XML
+│   ├── layout.py          # Deterministic positioning
+│   └── cli.py             # CLI: python -m diagrams --type all
 ├── manifests/             # Workflow definitions (JSON)
 │   └── text_extraction.json
-├── tests/                 # 85 unit tests
+├── tests/                 # 85+ unit tests
 │   ├── test_specs.py      # 29 tests -- pure spec functions
 │   ├── test_manifest.py   # 23 tests -- JSON loading, router
 │   ├── test_repository.py # 22 tests -- CRUD, foreign keys
@@ -145,6 +159,7 @@ agent-workflow/
 | **Settings** | API key, model, input/output folder configuration |
 | **Architecture** | Architecture explainer with code examples |
 | **Manifest** | Inspect the active workflow definition and spec registry |
+| **Diagrams** | Generate and download Draw.io diagrams |
 | **User Guide** | Step-by-step usage guide with troubleshooting |
 
 ## Database Schema

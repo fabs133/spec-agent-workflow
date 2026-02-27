@@ -9,3 +9,4 @@ Auto-generated documentation from Python docstrings.
    core
    agents
    db
+   diagrams
