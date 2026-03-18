@@ -112,18 +112,19 @@ def extract_pre(context: Context) -> SpecResult:
             suggested_fix="Run the intake step first to load files",
             tags=["pre", "extract"],
         )
-    if not api_key:
+    api_url = context.config.get("api_url", "")
+    if not api_key and not api_url:
         return SpecResult(
             rule_id="extract_pre",
             passed=False,
             message="api_key is not configured",
-            suggested_fix="Set the OpenAI API key in settings",
+            suggested_fix="Set the OpenAI API key in settings or configure a custom API URL",
             tags=["pre", "extract", "config"],
         )
     return SpecResult(
         rule_id="extract_pre",
         passed=True,
-        message=f"{len(files)} file(s) ready, API key configured",
+        message=f"{len(files)} file(s) ready, LLM endpoint configured",
         tags=["pre", "extract"],
     )
 

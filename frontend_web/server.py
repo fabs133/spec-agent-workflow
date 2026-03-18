@@ -340,6 +340,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
         api_key = body.get("api_key") or repo.get(conn, "openai_api_key") or ""
         model = body.get("model") or repo.get(conn, "default_model") or "gpt-4o"
+        api_url = body.get("api_url") or repo.get(conn, "api_url") or ""
         input_folder = body.get("input_folder") or repo.get(
             conn, "default_input_folder"
         ) or str(PROJECT_ROOT / "data" / "input")
@@ -348,7 +349,7 @@ class APIHandler(BaseHTTPRequestHandler):
         ) or str(PROJECT_ROOT / "data" / "output")
         conn.close()
 
-        if not api_key:
+        if not api_key and not api_url:
             self._json_response({"error": "No API key configured"}, 400)
             return
 
@@ -359,6 +360,7 @@ class APIHandler(BaseHTTPRequestHandler):
             },
             config={
                 "api_key": api_key,
+                "api_url": api_url,
                 "model": model,
                 "temperature": 0.3,
             },

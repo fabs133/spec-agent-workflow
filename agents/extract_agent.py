@@ -8,6 +8,7 @@ context.data["extracted_items"].
 from __future__ import annotations
 
 import json
+import logging
 import time
 from typing import Any, Dict, List
 
@@ -15,6 +16,9 @@ from core.agents import BaseAgent, register_agent
 from core.llm_client import chat_completion
 from core.models import Context
 from agents.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+
+
+logger = logging.getLogger(__name__)
 
 
 @register_agent("extract_agent")
@@ -25,6 +29,7 @@ class ExtractAgent(BaseAgent):
         api_key = context.config.get("api_key", "")
         model = context.config.get("model", "gpt-4o")
         temperature = context.config.get("temperature", 0.3)
+        api_url = context.config.get("api_url", "")
 
         loaded_files = context.data.get("loaded_files", [])
         all_items: List[Dict[str, Any]] = []
@@ -44,6 +49,7 @@ class ExtractAgent(BaseAgent):
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
+                base_url=api_url,
             )
             duration_ms = int((time.time() - start_time) * 1000)
             if not raw_content:
@@ -81,10 +87,18 @@ class ExtractAgent(BaseAgent):
         try:
             items = json.loads(cleaned)
         except json.JSONDecodeError:
+            logger.warning(
+                "Failed to parse LLM response for '%s': %s",
+                source_file,
+                cleaned[:500],
+            )
             return []
 
         if not isinstance(items, list):
             items = [items]
+
+        # Filter out non-dict items
+        items = [item for item in items if isinstance(item, dict)]
 
         # Enrich each item with source_file
         for item in items:

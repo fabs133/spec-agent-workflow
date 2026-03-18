@@ -353,6 +353,7 @@ async function renderRunWorkflow() {
     const outputFolder = settings.default_output_folder || '';
     const apiKey = settings.openai_api_key || '';
     const model = settings.default_model || 'gpt-4o';
+    const apiUrl = settings.api_url || '';
 
     // Build step order from manifest
     const stepNames = [];
@@ -386,12 +387,15 @@ async function renderRunWorkflow() {
         <div class="grid grid-2">
             <div><label>OpenAI API Key</label><input type="password" id="api-key" value="${escHtml(apiKey)}"></div>
             <div><label>Model</label>
-                <select id="model-select">
-                    ${['gpt-4o', 'gpt-4o-mini', 'gpt-4.1-nano', 'gpt-3.5-turbo'].map(m =>
-                        `<option value="${m}" ${m === model ? 'selected' : ''}>${m}</option>`
-                    ).join('')}
-                </select>
+                <input type="text" id="model-input" value="${escHtml(model)}" list="model-list-r" placeholder="gpt-4o">
+                <datalist id="model-list-r">
+                    <option value="gpt-4o"><option value="gpt-4o-mini"><option value="gpt-4.1-nano"><option value="gpt-3.5-turbo">
+                </datalist>
             </div>
+        </div>
+        <div class="grid grid-2">
+            <div><label>API URL (leer = OpenAI)</label><input type="text" id="api-url" value="${escHtml(apiUrl)}" placeholder="http://localhost:11434"></div>
+            <div></div>
         </div>
         <button onclick="saveRunSettings()">Save Settings</button>
         <div id="save-msg" class="mt-1"></div>
@@ -405,14 +409,15 @@ async function renderRunWorkflow() {
         <div id="run-progress"></div>
         <div id="run-status"></div>
         <div id="run-steps"></div>
-        <button class="btn-primary mt-1" id="start-btn" onclick="startWorkflow()" ${!apiKey ? 'disabled' : ''}>Start Workflow</button>
-        ${!apiKey ? '<p class="text-sm text-orange mt-1">Set an API key to enable workflow execution.</p>' : ''}`;
+        <button class="btn-primary mt-1" id="start-btn" onclick="startWorkflow()" ${!apiKey && !apiUrl ? 'disabled' : ''}>Start Workflow</button>
+        ${!apiKey && !apiUrl ? '<p class="text-sm text-orange mt-1">Set an API key or API URL to enable workflow execution.</p>' : ''}`;
 }
 
 async function saveRunSettings() {
     const body = {
         openai_api_key: $('api-key').value,
-        default_model: $('model-select').value,
+        default_model: $('model-input').value,
+        api_url: $('api-url').value,
         default_input_folder: $('input-folder').value,
         default_output_folder: $('output-folder').value,
     };
@@ -429,7 +434,8 @@ async function startWorkflow() {
 
     const body = {
         api_key: $('api-key').value,
-        model: $('model-select').value,
+        api_url: $('api-url').value,
+        model: $('model-input').value,
         input_folder: $('input-folder').value,
         output_folder: $('output-folder').value,
     };
@@ -731,12 +737,15 @@ async function renderSettings() {
         <div class="grid grid-2">
             <div><label>OpenAI API Key</label><input type="password" id="s-api-key" value="${escHtml(settings.openai_api_key || '')}"></div>
             <div><label>Model</label>
-                <select id="s-model">
-                    ${['gpt-4o', 'gpt-4o-mini', 'gpt-4.1-nano', 'gpt-3.5-turbo'].map(m =>
-                        `<option value="${m}" ${m === (settings.default_model || 'gpt-4o') ? 'selected' : ''}>${m}</option>`
-                    ).join('')}
-                </select>
+                <input type="text" id="s-model" value="${escHtml(settings.default_model || 'gpt-4o')}" list="model-list-s" placeholder="gpt-4o">
+                <datalist id="model-list-s">
+                    <option value="gpt-4o"><option value="gpt-4o-mini"><option value="gpt-4.1-nano"><option value="gpt-3.5-turbo">
+                </datalist>
             </div>
+        </div>
+        <div class="grid grid-2">
+            <div><label>API URL (leer = OpenAI)</label><input type="text" id="s-api-url" value="${escHtml(settings.api_url || '')}" placeholder="http://localhost:11434"></div>
+            <div></div>
         </div>
         <h2>Default Folders</h2>
         <div class="grid grid-2">
@@ -751,6 +760,7 @@ async function saveSettings() {
     const body = {
         openai_api_key: $('s-api-key').value,
         default_model: $('s-model').value,
+        api_url: $('s-api-url').value,
         default_input_folder: $('s-input').value,
         default_output_folder: $('s-output').value,
     };
