@@ -5,6 +5,9 @@ description = "Spec-Pattern Multi-Agent Workflow System (standalone)"
 requires-python = ">=3.10"
 dependencies = []
 
+[tool.setuptools]
+packages = []
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
