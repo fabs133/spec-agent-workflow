@@ -1,3 +1,5 @@
+![Tests](https://github.com/fabs133/spec-agent-workflow/actions/workflows/tests.yml/badge.svg)
+
 # Spec-Agent Workflow System
 
 A **Spec-Pattern Multi-Agent Architecture** for structured text extraction, built as a school project (VP) demonstrating backend, frontend, and relational database integration.
