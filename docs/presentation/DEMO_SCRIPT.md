@@ -9,6 +9,15 @@
 
 The school laptop only needs a browser. Everything runs on the Home PC.
 
+## First-Time Setup (once)
+
+Set the Tailscale Funnel URL (run `tailscale funnel status` to find your URL):
+```
+python scripts/set_funnel_url.py https://YOUR-MACHINE.tailXXXXX.ts.net
+```
+
+This saves it to `scripts/funnel_config.json` (gitignored, never committed).
+
 ## Before the Presentation (15 min prior)
 
 1. On the HOME PC:
@@ -28,7 +37,7 @@ The school laptop only needs a browser. Everything runs on the Home PC.
      cd C:\Users\fbrmp\Projekte\agent-workflow
      python scripts/demo_run.py
      ```
-     Should print: `Funnel: https://desktop-e9k819f.tail00fec6.ts.net`
+     Should print the Funnel URL from config.
 
    - **Terminal 3** — Start Tailscale Funnel (points to web app, NOT Ollama):
      ```
@@ -45,8 +54,16 @@ The school laptop only needs a browser. Everything runs on the Home PC.
 
 2. On the SCHOOL laptop:
    - Connect to Handy-Hotspot (fallback if Schulnetz blocks `.ts.net` domains)
-   - Open browser: `https://desktop-e9k819f.tail00fec6.ts.net`
+   - Open browser with the Funnel URL shown by `demo_run.py`
    - Verify: Web UI loads with sidebar (Dashboard, Run Workflow, etc.)
+
+## If the Funnel URL Changes
+
+```
+python scripts/set_funnel_url.py https://NEW-URL.tailXXXXX.ts.net
+```
+
+Then restart `demo_run.py` and re-run `demo_preflight.py`.
 
 ## During the Presentation (~5 min demo block)
 
@@ -101,14 +118,12 @@ python scripts/demo_run.py
 # 3. Start Tailscale Funnel (in a third terminal)
 tailscale funnel --bg --https=443 http://localhost:8501
 tailscale funnel status
-# Should show: (Funnel on) proxying to http://localhost:8501
 
 # 4. Run pre-flight check
 python scripts/demo_preflight.py
 # Expected: 8/8 checks pass
 
-# 5. Open on school laptop browser:
-# https://desktop-e9k819f.tail00fec6.ts.net
+# 5. Open Funnel URL on school laptop browser
 ```
 
 ## Timing Budget

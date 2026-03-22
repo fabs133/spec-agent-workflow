@@ -5,12 +5,19 @@ Verifies: Ollama, Web App, Tailscale Funnel, Database.
 
 Usage: python scripts/demo_preflight.py [--port PORT]
 """
-import sys, json, time, urllib.request, urllib.error, os
+import json, sys, time, urllib.request, urllib.error, os
+from pathlib import Path
 
 OLLAMA_URL = "http://localhost:11434"
 DEFAULT_MODEL = "qwen2.5:7b-instruct-q4_K_M"
-FUNNEL_URL = "https://desktop-e9k819f.tail00fec6.ts.net"
 DEFAULT_PORT = 8501
+CONFIG_PATH = Path(__file__).parent / "funnel_config.json"
+
+def load_funnel_url():
+    if CONFIG_PATH.exists():
+        config = json.loads(CONFIG_PATH.read_text())
+        return config.get("funnel_url", "")
+    return ""
 
 def check(name, fn):
     try:
@@ -30,24 +37,27 @@ def main():
             pass
 
     app_url = f"http://localhost:{port}"
+    funnel_url = load_funnel_url()
+
+    total_checks = 8 if funnel_url else 7
 
     print(f"\n{'='*60}")
     print(f"Demo Pre-flight Check (Home PC)")
     print(f"{'='*60}")
     print(f"Ollama:  {OLLAMA_URL}")
     print(f"Web App: {app_url}")
-    print(f"Funnel:  {FUNNEL_URL}")
+    print(f"Funnel:  {funnel_url or '(not configured)'}")
     print(f"Model:   {DEFAULT_MODEL}")
     print(f"{'='*60}\n")
 
     results = []
 
     # 1. Python version
-    print("[1/8] Python version")
+    print(f"[1/{total_checks}] Python version")
     results.append(check("Python", lambda: f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"))
 
     # 2. Project imports
-    print("[2/8] Project imports")
+    print(f"[2/{total_checks}] Project imports")
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     def check_imports():
         from core.manifest import Manifest
@@ -57,7 +67,7 @@ def main():
     results.append(check("Imports", check_imports))
 
     # 3. Ollama reachable
-    print("[3/8] Ollama reachable")
+    print(f"[3/{total_checks}] Ollama reachable")
     def check_ollama():
         req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -67,7 +77,7 @@ def main():
     results.append(check("Ollama", check_ollama))
 
     # 4. Model available
-    print("[4/8] Model available")
+    print(f"[4/{total_checks}] Model available")
     def check_model():
         req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -79,7 +89,7 @@ def main():
     results.append(check("Model", check_model))
 
     # 5. Test inference
-    print("[5/8] Test inference")
+    print(f"[5/{total_checks}] Test inference")
     def check_inference():
         payload = json.dumps({
             "model": DEFAULT_MODEL,
@@ -101,7 +111,7 @@ def main():
     results.append(check("Inference", check_inference))
 
     # 6. Database
-    print("[6/8] Database")
+    print(f"[6/{total_checks}] Database")
     def check_db():
         from db.connection import init_db, get_connection
         init_db()
@@ -114,7 +124,7 @@ def main():
     results.append(check("Database", check_db))
 
     # 7. Web app running locally
-    print("[7/8] Web app (local)")
+    print(f"[7/{total_checks}] Web app (local)")
     def check_webapp():
         req = urllib.request.Request(f"{app_url}/api/stats", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -122,14 +132,15 @@ def main():
             return f"Running, {data.get('total_runs', '?')} runs"
     results.append(check("Web App", check_webapp))
 
-    # 8. Funnel reachable (public URL)
-    print("[8/8] Tailscale Funnel (public)")
-    def check_funnel():
-        req = urllib.request.Request(f"{FUNNEL_URL}/api/stats", method="GET")
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read())
-            return f"Reachable, {data.get('total_runs', '?')} runs"
-    results.append(check("Funnel", check_funnel))
+    # 8. Funnel reachable (public URL) — only if configured
+    if funnel_url:
+        print(f"[8/{total_checks}] Tailscale Funnel (public)")
+        def check_funnel():
+            req = urllib.request.Request(f"{funnel_url}/api/stats", method="GET")
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read())
+                return f"Reachable, {data.get('total_runs', '?')} runs"
+        results.append(check("Funnel", check_funnel))
 
     # Summary
     passed = sum(results)
@@ -137,7 +148,8 @@ def main():
     print(f"\n{'='*60}")
     if passed == total:
         print(f"ALL CHECKS PASSED ({passed}/{total}) — Ready for demo!")
-        print(f"Open on school laptop: {FUNNEL_URL}")
+        if funnel_url:
+            print(f"Open on school laptop: {funnel_url}")
     else:
         print(f"WARNING: {total - passed} check(s) failed ({passed}/{total})")
     print(f"{'='*60}\n")

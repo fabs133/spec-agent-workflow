@@ -1,17 +1,25 @@
 """Launch the app pre-configured for the live demo.
 
 Configures Ollama on localhost as the LLM provider and starts the server.
-Access remotely via Tailscale Funnel: https://desktop-e9k819f.tail00fec6.ts.net
+Access remotely via Tailscale Funnel (URL configured in scripts/funnel_config.json).
 
 Usage: python scripts/demo_run.py [--port PORT]
 """
-import sys, os
+import json, sys, os
+from pathlib import Path
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.connection import init_db, get_connection
 from db.repository import SettingsRepository
 
-FUNNEL_URL = "https://desktop-e9k819f.tail00fec6.ts.net"
+CONFIG_PATH = Path(__file__).parent / "funnel_config.json"
+
+def load_funnel_url():
+    if CONFIG_PATH.exists():
+        config = json.loads(CONFIG_PATH.read_text())
+        return config.get("funnel_url", "")
+    return ""
 
 def main():
     port = 8501
@@ -19,6 +27,8 @@ def main():
     for i, arg in enumerate(args):
         if arg == "--port" and i + 1 < len(args):
             port = int(args[i + 1])
+
+    funnel_url = load_funnel_url()
 
     # Pre-configure settings for local Ollama
     init_db()
@@ -33,9 +43,13 @@ def main():
     print(f"  LLM:    Ollama @ http://localhost:11434")
     print(f"  Model:  qwen2.5:7b-instruct-q4_K_M")
     print(f"  Port:   {port}")
-    print(f"  Funnel: {FUNNEL_URL}")
-    print(f"")
-    print(f"  Remote access: open {FUNNEL_URL} in browser")
+    if funnel_url:
+        print(f"  Funnel: {funnel_url}")
+        print(f"")
+        print(f"  Remote access: open {funnel_url} in browser")
+    else:
+        print(f"")
+        print(f"  No Funnel URL configured. Run: python scripts/set_funnel_url.py <URL>")
     print(f"  Starting server...")
 
     from frontend_web.server import start_server

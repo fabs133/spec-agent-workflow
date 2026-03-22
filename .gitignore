@@ -27,6 +27,9 @@ docs/build/
 # Claude Code
 .claude/
 
+# Demo config (contains machine-specific Tailscale Funnel URL)
+scripts/funnel_config.json
+
 # Pytest
 .pytest_cache/
 
