@@ -24,6 +24,9 @@ docs/build/
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # Pytest
 .pytest_cache/
 
