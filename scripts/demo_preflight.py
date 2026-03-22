@@ -1,15 +1,18 @@
 """Pre-flight check for live demo.
 
-Run this before the presentation to verify all systems are operational.
-Usage: python scripts/demo_preflight.py [--api-url URL] [--model MODEL]
+Run this ON THE HOME PC before the presentation.
+Verifies: Ollama, Web App, Tailscale Funnel, Database.
+
+Usage: python scripts/demo_preflight.py [--port PORT]
 """
 import sys, json, time, urllib.request, urllib.error, os
 
-DEFAULT_URL = "https://desktop-e9k819f.tail00fec6.ts.net"
+OLLAMA_URL = "http://localhost:11434"
 DEFAULT_MODEL = "qwen2.5:7b-instruct-q4_K_M"
+FUNNEL_URL = "https://desktop-e9k819f.tail00fec6.ts.net"
+DEFAULT_PORT = 8501
 
 def check(name, fn):
-    """Run a check function, print result."""
     try:
         result = fn()
         print(f"  ✓ {name}: {result}")
@@ -19,30 +22,32 @@ def check(name, fn):
         return False
 
 def main():
-    api_url = sys.argv[sys.argv.index("--api-url") + 1] if "--api-url" in sys.argv else DEFAULT_URL
-    model = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else DEFAULT_MODEL
+    port = DEFAULT_PORT
+    if "--port" in sys.argv:
+        try:
+            port = int(sys.argv[sys.argv.index("--port") + 1])
+        except (IndexError, ValueError):
+            pass
 
-    if not api_url:
-        print("ERROR: No API URL specified. Use --api-url <url>")
-        print("Example: python scripts/demo_preflight.py --api-url https://your-domain.com")
-        sys.exit(1)
+    app_url = f"http://localhost:{port}"
 
-    base = api_url.rstrip("/")
     print(f"\n{'='*60}")
-    print(f"Demo Pre-flight Check")
+    print(f"Demo Pre-flight Check (Home PC)")
     print(f"{'='*60}")
-    print(f"API URL: {base}")
-    print(f"Model:   {model}")
+    print(f"Ollama:  {OLLAMA_URL}")
+    print(f"Web App: {app_url}")
+    print(f"Funnel:  {FUNNEL_URL}")
+    print(f"Model:   {DEFAULT_MODEL}")
     print(f"{'='*60}\n")
 
     results = []
 
     # 1. Python version
-    print("[1/6] Python version")
+    print("[1/8] Python version")
     results.append(check("Python", lambda: f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"))
 
     # 2. Project imports
-    print("[2/6] Project imports")
+    print("[2/8] Project imports")
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     def check_imports():
         from core.manifest import Manifest
@@ -51,68 +56,80 @@ def main():
         return "All core modules OK"
     results.append(check("Imports", check_imports))
 
-    # 3. Remote API reachable
-    print("[3/6] Remote API reachable")
-    def check_api():
-        # Try Ollama-style endpoint first
-        try:
-            req = urllib.request.Request(f"{base}/api/tags", method="GET")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read())
-                models = [m["name"] for m in data.get("models", [])]
-                return f"Reachable, {len(models)} models available"
-        except Exception:
-            pass
-        # Try OpenAI-style endpoint
-        req = urllib.request.Request(f"{base}/v1/models", method="GET")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return f"Reachable (OpenAI-compatible)"
-    results.append(check("API endpoint", check_api))
+    # 3. Ollama reachable
+    print("[3/8] Ollama reachable")
+    def check_ollama():
+        req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            models = [m["name"] for m in data.get("models", [])]
+            return f"Running, {len(models)} models"
+    results.append(check("Ollama", check_ollama))
 
     # 4. Model available
-    print("[4/6] Model available")
+    print("[4/8] Model available")
     def check_model():
-        try:
-            req = urllib.request.Request(f"{base}/api/tags", method="GET")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read())
-                models = [m["name"] for m in data.get("models", [])]
-                if model in models or any(model in m for m in models):
-                    return f"'{model}' found"
-                return f"WARNING: '{model}' not found in {models}"
-        except Exception:
-            return "Could not list models (may still work)"
+        req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            models = [m["name"] for m in data.get("models", [])]
+            if DEFAULT_MODEL in models or any(DEFAULT_MODEL in m for m in models):
+                return f"'{DEFAULT_MODEL}' found"
+            return f"WARNING: '{DEFAULT_MODEL}' not in {models}"
     results.append(check("Model", check_model))
 
-    # 5. Test inference (small request)
-    print("[5/6] Test inference")
+    # 5. Test inference
+    print("[5/8] Test inference")
     def check_inference():
-        url = f"{base}/v1/chat/completions"
         payload = json.dumps({
-            "model": model,
+            "model": DEFAULT_MODEL,
             "temperature": 0.1,
             "messages": [{"role": "user", "content": "Reply with only the word 'OK'."}],
         }).encode()
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+        req = urllib.request.Request(
+            f"{OLLAMA_URL}/v1/chat/completions",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
         start = time.time()
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             body = json.loads(resp.read())
         duration = time.time() - start
         content = body["choices"][0]["message"]["content"].strip()
-        tokens = body.get("usage", {}).get("total_tokens", "?")
-        return f"'{content}' in {duration:.1f}s ({tokens} tokens)"
+        return f"'{content}' in {duration:.1f}s"
     results.append(check("Inference", check_inference))
 
-    # 6. Database writable
-    print("[6/6] Database")
+    # 6. Database
+    print("[6/8] Database")
     def check_db():
         from db.connection import init_db, get_connection
         init_db()
         conn = get_connection()
-        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()]
         conn.close()
         return f"{len(tables)} tables"
     results.append(check("Database", check_db))
+
+    # 7. Web app running locally
+    print("[7/8] Web app (local)")
+    def check_webapp():
+        req = urllib.request.Request(f"{app_url}/api/stats", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            return f"Running, {data.get('total_runs', '?')} runs"
+    results.append(check("Web App", check_webapp))
+
+    # 8. Funnel reachable (public URL)
+    print("[8/8] Tailscale Funnel (public)")
+    def check_funnel():
+        req = urllib.request.Request(f"{FUNNEL_URL}/api/stats", method="GET")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            return f"Reachable, {data.get('total_runs', '?')} runs"
+    results.append(check("Funnel", check_funnel))
 
     # Summary
     passed = sum(results)
@@ -120,9 +137,9 @@ def main():
     print(f"\n{'='*60}")
     if passed == total:
         print(f"ALL CHECKS PASSED ({passed}/{total}) — Ready for demo!")
+        print(f"Open on school laptop: {FUNNEL_URL}")
     else:
         print(f"WARNING: {total - passed} check(s) failed ({passed}/{total})")
-        print("Fix the issues above before starting the presentation.")
     print(f"{'='*60}\n")
     sys.exit(0 if passed == total else 1)
 
